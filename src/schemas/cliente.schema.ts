@@ -31,6 +31,10 @@ export const clienteSchema = z.object({
     .max(30)
     .trim(),
 
+  contrasena: z
+    .string()
+    .min(6, "La contraseña debe tener mínimo 6 caracteres"),
+
   foto_identidad_cliente: z
     .string()
     .url()

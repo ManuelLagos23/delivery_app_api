@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { enviarCodigoVerificacion } from "@/lib/email";
+import bcrypt from "bcrypt";
 
 function generarCodigoVerificacion() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -27,7 +28,9 @@ async function validarCodigoVerificacion(correo: string, codigo: string) {
     });
 
     if (nuevosIntentos >= 3) {
-      await prisma.verificacionCorreo.delete({ where: { correo } });
+      await prisma.verificacionCorreo.delete({
+        where: { correo },
+      });
     }
 
     throw new Error("Código de verificación incorrecto");
@@ -65,13 +68,20 @@ export async function enviarCodigoRegistro(correo: string) {
 
   await enviarCodigoVerificacion(correo, codigo);
 
-  return { mensaje: "Código enviado correctamente" };
+  return {
+    mensaje: "Código enviado correctamente",
+  };
 }
 
-export async function verificarCodigoRegistro(correo: string, codigo: string) {
+export async function verificarCodigoRegistro(
+  correo: string,
+  codigo: string
+) {
   await validarCodigoVerificacion(correo, codigo);
 
-  return { mensaje: "Código verificado correctamente" };
+  return {
+    mensaje: "Código verificado correctamente",
+  };
 }
 
 export async function crearClienteConVerificacion(data: {
@@ -81,17 +91,26 @@ export async function crearClienteConVerificacion(data: {
   apellido_cliente: string;
   telefono_cliente: string;
   identidad_cliente: string;
+  contrasena: string;
   foto_identidad_cliente?: string;
 }) {
-  await validarCodigoVerificacion(data.correo_cliente, data.codigo_verificacion);
+  await validarCodigoVerificacion(
+    data.correo_cliente,
+    data.codigo_verificacion
+  );
 
   const clienteExistente = await prisma.cliente.findUnique({
-    where: { correo_cliente: data.correo_cliente },
+    where: {
+      correo_cliente: data.correo_cliente,
+    },
   });
 
   if (clienteExistente) {
     throw new Error("El correo ya está registrado");
   }
+
+  // Encriptar contraseña antes de guardarla
+  const contrasenaHash = await bcrypt.hash(data.contrasena, 10);
 
   const cliente = await prisma.cliente.create({
     data: {
@@ -101,11 +120,16 @@ export async function crearClienteConVerificacion(data: {
       correo_cliente: data.correo_cliente,
       identidad_cliente: data.identidad_cliente,
       foto_identidad_cliente: data.foto_identidad_cliente,
+      contrasena: contrasenaHash,
       estado_cliente: true,
     },
   });
 
-  await prisma.verificacionCorreo.delete({ where: { correo: data.correo_cliente } });
+  await prisma.verificacionCorreo.delete({
+    where: {
+      correo: data.correo_cliente,
+    },
+  });
 
   return cliente;
 }
