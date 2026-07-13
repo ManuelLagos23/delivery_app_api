@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UsuarioSistema {
+  id                         Int      @id @default(autoincrement())
+  nombre_usuario_sistema     String
+  apellido_usuario_sistema   String
+  correo_usuario_sistema     String   @unique
+  telefono_usuario_sistema   String
+  contrasena_usuario_sistema String
+  estado_usuario_sistema     Boolean
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
+model Cliente {
+  id                     Int         @id @default(autoincrement())
+  nombre_cliente         String
+  apellido_cliente       String
+  telefono_cliente       String
+  correo_cliente         String      @unique
+  identidad_cliente      String
+  foto_identidad_cliente String?
+  estado_cliente         Boolean
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  contrasena             String
+  Direccion              Direccion[]
+  Pedido                 Pedido[]
+}
+
+model Direccion {
+  id                     Int      @id @default(autoincrement())
+  id_cliente             Int
+  departamento_direccion String
+  municipio_direccion    String
+  barrio_direccion       String
+  referencia_direccion   String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  cliente                Cliente  @relation(fields: [id_cliente], references: [id])
+  pedidos                Pedido[]
+}
+
+model Empresa {
+  id                     Int               @id @default(autoincrement())
+  nombre_empresa         String
+  ubicacion_empresa      String
+  responsable_empresa    String
+  telefono_empresa_uno   String
+  telefono_encargado_dos String
+  correo_empresa         String            @unique
+  foto_empresa           String?
+  rubro_empresa          String
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  pedidos                Pedido[]
+  productos              ProductoEmpresa[]
+  usuarios               UsuarioEmpresa[]
+}
+
+model ProductoEmpresa {
+  id                          Int             @id @default(autoincrement())
+  id_empresa                  Int
+  nombre_producto             String
+  descripcion_producto        String
+  foto_producto               String?
+  disponible_producto         Boolean
+  precio_producto             Decimal         @db.Decimal(10, 2)
+  descuento_producto          Decimal?        @db.Decimal(10, 2)
+  tamano_producto             String?
+  precio_tamano_producto      Decimal?        @db.Decimal(10, 2)
+  complementos_producto       String?
+  precio_complemento_producto Decimal?        @db.Decimal(10, 2)
+  tipo_producto               String
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+  detallesPedido              PedidoDetalle[]
+  empresa                     Empresa         @relation(fields: [id_empresa], references: [id])
+}
+
+model UsuarioEmpresa {
+  id                         Int      @id @default(autoincrement())
+  id_empresa                 Int
+  nombre_usuario_empresa     String
+  correo_usuario_empresa     String   @unique
+  contrasena_usuario_empresa String
+  estado_usuario_empresa     Boolean
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  empresa                    Empresa  @relation(fields: [id_empresa], references: [id])
+}
+
+model Motorista {
+  id                  Int                 @id @default(autoincrement())
+  nombre_motorista    String
+  apellido_motorista  String
+  identidad_motorista String
+  direccion_motorista String
+  telefono_motorista  String
+  correo_motorista    String              @unique
+  foto_motorista      String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  vehiculos           MotoristaVehiculo[]
+  pedidos             Pedido[]
+  usuarios            UsuarioMotorista[]
+}
+
+model MotoristaVehiculo {
+  id                       Int       @id @default(autoincrement())
+  id_motorista             Int
+  color_motorista_vehiculo String
+  placa_motorista_vehiculo String    @unique
+  tipo_motorista_vehiculo  String
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  motorista                Motorista @relation(fields: [id_motorista], references: [id])
+  pedidos                  Pedido[]
+}
+
+model UsuarioMotorista {
+  id                           Int       @id @default(autoincrement())
+  id_motorista                 Int
+  nombre_motorista             String
+  correo_usuario_motorista     String    @unique
+  contrasena_usuario_motorista String
+  estado_usuario_motorista     Boolean
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+  motorista                    Motorista @relation(fields: [id_motorista], references: [id])
+}
+
+model Pedido {
+  id                           Int               @id @default(autoincrement())
+  id_cliente                   Int
+  id_empresa                   Int
+  id_direccion                 Int
+  id_motorista                 Int
+  id_vehiculo_motorista        Int
+  precio_total_producto_pedido Decimal           @db.Decimal(10, 2)
+  tipo_entrega_pedido          String
+  metodo_pago_pedido           String
+  fecha_pedido                 DateTime
+  hora_pedido                  String
+  estado_pedido                Boolean
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+  cliente                      Cliente           @relation(fields: [id_cliente], references: [id])
+  direccion                    Direccion         @relation(fields: [id_direccion], references: [id])
+  empresa                      Empresa           @relation(fields: [id_empresa], references: [id])
+  motorista                    Motorista         @relation(fields: [id_motorista], references: [id])
+  vehiculo                     MotoristaVehiculo @relation(fields: [id_vehiculo_motorista], references: [id])
+  detalles                     PedidoDetalle[]
+}
+
+model PedidoDetalle {
+  id                          Int             @id @default(autoincrement())
+  id_pedidos                  Int
+  id_producto_empresa         Int
+  precio_producto             Decimal         @db.Decimal(10, 2)
+  precio_tamano_producto      Decimal?        @db.Decimal(10, 2)
+  precio_complemento_producto Decimal?        @db.Decimal(10, 2)
+  nota_producto               String?
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+  pedido                      Pedido          @relation(fields: [id_pedidos], references: [id])
+  producto                    ProductoEmpresa @relation(fields: [id_producto_empresa], references: [id])
+}
+
+model VerificacionCorreo {
+  id         Int      @id @default(autoincrement())
+  correo     String   @unique
+  codigo     String
+  expiracion DateTime
+  intentos   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
